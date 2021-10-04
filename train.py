@@ -190,25 +190,13 @@ for i, n in enumerate(dataset.data.keys()):
     acc_patient_score.append(model_best['test_acc_per_fold'])
     loss_patient_score.append(model_best['test_loss_per_fold'])
     # cm_per_participant.append(cm_per_fold)
-##%%
-# ------------------------------------------------------------------------------------
-#                                    Final Results
-# ------------------------------------------------------------------------------------
-acc_patient_score, loss_patient_score = np.array(acc_patient_score), np.array(loss_patient_score)
-# mean acc & loss in cross validation per subject
-mean_acc = [np.mean(score) for score in acc_patient_score]
-mean_loss = [np.mean(score) for score in loss_patient_score]
 
-# Boxplot the average participant test acc per fold
-title = f'Participants Cross-Validation Score Distribution Across {config.NUM_FOLDS} Folds\n ' \
-        f'for {len(acc_patient_score)}'
-utils.boxplot_within_patient_acc_fold(acc_patient_score, loss_patient_score, title)
 
-# Plots mean Test acc & loss in cross validation per subject
-utils.plot_mean_acc_within_patient(mean_acc, mean_loss)
 
-# confusion matrix dataframe across participants
-df = utils.cm_participants_to_df(cm_per_participant, loss_patient_score)
+# ##%%
+# # ------------------------------------------------------------------------------------
+# #                                    Final Results
+# # ------------------------------------------------------------------------------------
+import tensorflowjs as tfjs
 
-utils.boxplot_evaluation_metrics_from_df(df)
-df.to_csv('log_savings/alex' + date + '/' + date + '_data.csv')
+tfjs.converterrs.save_keras_model(hub.model, 'log_savings/alex' + 'date')
