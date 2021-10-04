@@ -46,28 +46,14 @@ dataset = dbs.eeg()
 ane_data_path = 'datasets/alex'
 # loads [x_epochs, y_labels]
 dataset.load_epochs_labels(ane_data_path, selected_channels=config.channels_sleep_montage, sleep_montage=True)
-stop
 # converts labels to [0=>conscious, 1=>unconscious]
 dataset.get_binary_labels()
 # Normalize the dataset between [-1,1]
 dataset.transform(mpf.nor_dataset)
 # applying dataset transformation e.g. 'spectrogram'
 dataset.transform(mpf.raw_chunks_to_spectrograms, name=date + 'SPECTROGRAM')
-#dataset.transform(mpf.band_binary_matrix_dataset, name='BBM')
-#eeg.transform(mpf.binary_matrix_dataset, name= 'BM')
 # make dataset ready for training
 dataset.get_ready_for_training()
-
-#%%
-from tqdm import tqdm
-
-# Initializing container for dataset
-data = dict()
-
-info = dict()
-for n, eeg_file in enumerate(tqdm(os.listdir(ane_data_path))):
-
-    print(eeg_file)
 
 # %%
 # ------------------------------------------------------------------------------------
@@ -83,7 +69,7 @@ for i, n in enumerate(dataset.data.keys()):
     # Initializing variables
     cm_per_fold = []
     # number of train epochs
-    train_epochs = 50
+    train_epochs = 10
     # early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5,
     #                                               verbose=1, restore_best_weights=True)
     kfold = KFold(n_splits=config.NUM_FOLDS, shuffle=True)
@@ -108,7 +94,7 @@ for i, n in enumerate(dataset.data.keys()):
                   'out_size': 1}
 
     p_count = 0  # early stopping counter
-    patient = 10  # wait n epochs for error to keep decreasing, is not stop
+    patient = 5  # wait n epochs for error to keep decreasing, is not stop
 
     all_folds_best_test_score = 0.0
     for tra, val in kfold.split(dataset.data[n]['train']['epochs'], dataset.data[n]['train']['labels']):
@@ -194,16 +180,16 @@ for i, n in enumerate(dataset.data.keys()):
         # -------------------------
         # Load best model in fold
         model_best_fold = tf.keras.models.load_model('log_savings/alex' + date + '/best_fold_model.h5')
-        # Confusion matrix of best model in fold
-        cm_per_fold.append(utils.get_confusion_matrix(model_best_fold, dataset.data[n]['test'],
-                                                      dataset.info[n]['class_balance']['test']['value']))
+        # # Confusion matrix of best model in fold
+        # cm_per_fold.append(utils.get_confusion_matrix(model_best_fold, dataset.data[n]['test'],
+        #                                               dataset.info[n]['class_balance']['test']['value']))
         # Increase fold number
         fn += 1
     # Saving Scores per Patient
     # -----------------------------------------------------------------------------------------------------------------
     acc_patient_score.append(model_best['test_acc_per_fold'])
     loss_patient_score.append(model_best['test_loss_per_fold'])
-    cm_per_participant.append(cm_per_fold)
+    # cm_per_participant.append(cm_per_fold)
 ##%%
 # ------------------------------------------------------------------------------------
 #                                    Final Results

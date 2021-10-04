@@ -287,7 +287,7 @@ def sleep_montage(raw):
     # Creates Fpz-Cz difference
     new_raw = mne.set_bipolar_reference(raw.load_data(), anode=['Fp2'], cathode=['Cz'])
     # Creates Pz-Oz difference
-    new_raw = mne.set_bipolar_reference(new_raw, anode=['Pz'], cathode=['Oz'])
+    new_raw = mne.set_bipolar_reference(new_raw, anode=['Pz'], cathode=['O2'])
 
     return new_raw
 

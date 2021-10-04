@@ -21,7 +21,7 @@ channels_r = ['Iz', 'O2', 'Oz', 'O1', 'PO8', 'PO4', 'POz', 'PO3', 'PO7', 'P8',
               'F3', 'F5', 'F7', 'AF4', 'AFz', 'AF3', 'Fp2', 'Fpz', 'Fp1']
 
 # Channels for sleep montage
-channels_sleep_montage = ['Fp2', 'Cz', 'Pz', 'Oz']
+channels_sleep_montage = ['Fp2', 'Cz', 'Pz', 'O2']
 # Define EEG bands
 eeg_bands = {'Delta': (1, 4),
              'Theta': (4, 8),
