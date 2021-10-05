@@ -9,21 +9,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
 # importing personal libraries
 from helpers_and_functions import config, main_functions as mpf
 import databases as dbs
 
-MEDIUM_SIZE = 15
-BIGGER_SIZE = 20
-
-plt.rc('font', size=BIGGER_SIZE)  # controls default text sizes
-plt.rc('axes', titlesize=BIGGER_SIZE)  # fontsize of the axes title
-plt.rc('axes', labelsize=BIGGER_SIZE)  # fontsize of the x and y labels
-plt.rc('xtick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
-plt.rc('ytick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
-plt.rc('legend', fontsize=BIGGER_SIZE)  # legend fontsize
-plt.rc('figure', titlesize=BIGGER_SIZE + 5)  # fontsize of the figure title
 
 def plot_train_test_history(model_best):
     """
@@ -147,28 +136,52 @@ def get_confusion_matrix(model, data, class_balance):
     return con_matrix
 
 
-def cm_participants_to_df(cm_per_par, losses, melt=False):
+def cm_fold_to_df(cm_per_fold):
     """
-    Conerts Confusion Matrix per participants to data frame
-    @param cm_per_par: cm per participant
-    @param losses: losses per participant
+    Conerts Confusion Matrix per fold to data frame
+    @param cm_per_fold: cm per participant
     @return: dataframe
     """
     # initialize dataframe
     data_f = pd.DataFrame(
-        columns=['true_p', 'false_n', 'false_p', 'true_n', 'acc', 'precision', 'recall', 'f1', 'fold', 'participant', 'loss'])
+        columns=['true_p', 'false_n', 'false_p', 'true_n', 'acc', 'precision', 'recall', 'f1', 'fold'])
+    for num, cmpp in enumerate(cm_per_fold):
+        # adds the fold no and participant no to each cm
+        cmpp = np.array([np.append(cmpp.flatten(), np.append(evaluation_metrics(cmpp, out=None),
+                                                             np.array([num + 1])))])
+        # method to append np.array([[true_p, false_n], [false_p, true_n]]
+        data_f = data_f.append(pd.DataFrame(cmpp, columns=['true_p', 'false_n', 'false_p', 'true_n',
+                                                           'acc', 'precision', 'recall', 'f1', 'fold']),
+                               ignore_index=True)
+
+    # converts columns into integers
+    col = ["true_p", "false_n", "false_p", "true_n"]
+    data_f[col] = data_f[col].astype(int)
+
+    return data_f
+
+
+def cm_participants_to_df(cm_per_par, melt=False):
+    """
+    Conerts Confusion Matrix per participants to data frame
+    @param cm_per_par: cm per participant
+    @return: dataframe
+    """
+    # initialize dataframe
+    data_f = pd.DataFrame(
+        columns=['true_p', 'false_n', 'false_p', 'true_n', 'acc', 'precision', 'recall', 'f1', 'fold', 'participant'])
     for num, cmpp in enumerate(cm_per_par):
         # adds the fold no and participant no to each cm
         cmpp = np.array([np.append(cmpf.flatten(), np.append(evaluation_metrics(cmpf, out=None),
-                                                             np.array([f + 1, num + 1, losses[num][f]]))) for f, cmpf in
+                                                             np.array([f + 1, num + 1]))) for f, cmpf in
                          enumerate(cmpp)])
         # method to append np.array([[true_p, false_n], [false_p, true_n]]
         data_f = data_f.append(pd.DataFrame(cmpp, columns=['true_p', 'false_n', 'false_p', 'true_n',
-                                                           'acc', 'precision', 'recall', 'f1', 'fold', 'participant', 'loss']),
+                                                           'acc', 'precision', 'recall', 'f1', 'fold', 'participant']),
                                ignore_index=True)
     if melt:
         # melts cm values into two columns
-        data_f = pd.melt(data_f, id_vars=['acc', 'precision', 'recall', 'f1', 'fold', 'participant', 'loss'], var_name='cm',
+        data_f = pd.melt(data_f, id_vars=['acc', 'precision', 'recall', 'f1', 'fold', 'participant'], var_name='cm',
                          value_name='value_cm')
     # converts columns into integers
     col = ["true_p", "false_n", "false_p", "true_n", "participant"]
@@ -176,60 +189,6 @@ def cm_participants_to_df(cm_per_par, losses, melt=False):
 
     return data_f
 
-
-# def make_confusion_matrix(conf_matrix,
-#                           group_names=None,
-#                           categories='auto',
-#                           class_balance=None,
-#                           title=None
-#                           ):
-#     """
-#     This function will make a pretty plot of an sklearn Confusion Matrix cm using a Seaborn heatmap visualization.
-#     Arguments
-#     ---------
-#     conf_matrix:            confusion matrix to be passed in
-#     group_names:   List of strings that represent the labels row by row to be shown in each square.
-#     categories:    List of strings containing the categories to be displayed on the x,y axis. Default is 'auto'
-#     class_balance: The value of the distribution of classes
-#     title:         Title for the heatmap. Default is None.
-#     """
-#     # If True, show the color bar. The cbar values are based off the values in the confusion matrix.
-#     cbar = True
-#
-#     # CODE TO GENERATE TEXT INSIDE EACH SQUARE
-#     blanks = ['' for i in range(conf_matrix.size)]
-#
-#     if group_names and len(group_names) == conf_matrix.size:
-#         group_labels = ["{}\n".format(value) for value in group_names]
-#     else:
-#         group_labels = blanks
-#     # show the raw number in the confusion matrix.
-#     group_counts = ["{0:0.0f}\n".format(value) for value in conf_matrix.flatten()]
-#     # shows the percentage of cm with respect entire dataset
-#     group_percentages = ["{0:.2%}".format(value) for value in conf_matrix.flatten() / np.sum(conf_matrix)]
-#     # shows the percentage of cm with respect to each class
-#     class_p = np.array([i / np.flip(class_balance) for i in conf_matrix])
-#     class_p = [f"{value:.2%}" for value in class_p.flatten()]
-#
-#     box_labels = [f"{v1}{v2}{v3}{v4}".strip() for v1, v2, v3, v4 in
-#                   zip(group_percentages, group_labels, group_counts, class_p)]
-#     box_labels = np.asarray(box_labels).reshape(conf_matrix.shape[0], conf_matrix.shape[1])
-#
-#     # CODE TO GENERATE SUMMARY STATISTICS & TEXT FOR SUMMARY STATS
-#     stats_text = ml_measures(conf_matrix, out='text')
-#     # makes xlabel
-#     x_cat2, x_cat1 = f'from {class_balance[0]} ' + categories[1], f'from {class_balance[1]} ' + categories[0]
-#
-#     # MAKE THE HEATMAP VISUALIZATION
-#     plt.figure()
-#     sns.heatmap(conf_matrix, annot=box_labels, fmt="", cmap='gray_r', cbar=True, xticklabels=[x_cat1, x_cat2],
-#                 yticklabels=categories)
-#     plt.ylabel('True label')
-#     plt.xlabel('Predicted label' + stats_text)
-#     if title:
-#         plt.title(title)
-#
-#     plt.show()
 
 def make_confusion_matrix(conf_matrix,
                           group_names=None,
@@ -256,25 +215,26 @@ def make_confusion_matrix(conf_matrix,
         group_labels = blanks
     # show the raw number in the confusion matrix.
     group_counts = ["{0:0.0f}\n".format(value) for value in conf_matrix.flatten()]
-    # shows the percentage of cm with respect entire dataset
-    group_percentages = ["{0:.2%}".format(value) for value in conf_matrix.flatten() / np.sum(conf_matrix)]
+    # # shows the percentage of cm with respect entire dataset
+    # group_percentages = ["{0:.2%}".format(value) for value in conf_matrix.flatten() / np.sum(conf_matrix)]
     # shows the percentage of cm with respect to each class
-    class_p = np.array([i / np.flip(list(class_balance.values())) for i in conf_matrix])
+    class_p = np.array([val / list(class_balance.values())[1 - i] for i, val in enumerate(conf_matrix)])
     class_p = [f"{value:.2%}" for value in class_p.flatten()]
 
-    box_labels = [f"{v1}{v2}{v3}{v4}".strip() for v1, v2, v3, v4 in
-                  zip(group_percentages, group_labels, group_counts, class_p)]
+    box_labels = [f"{v1}{v2}{v3}".strip() for v1, v2, v3 in
+                  zip(group_labels, group_counts, class_p)]
     box_labels = np.asarray(box_labels).reshape(conf_matrix.shape[0], conf_matrix.shape[1])
 
     # CODE TO GENERATE SUMMARY STATISTICS & TEXT FOR SUMMARY STATS
     stats_text = evaluation_metrics(conf_matrix, out='text')
     # makes xlabel
-    x_cat = list(np.flip([f'from {class_balance[cl]} ' + str(categories[cl]) for cl in categories.keys()]))
+    x_cat = list(np.flip([f'from {class_balance[cl]} \n' + str(categories[cl]) for cl in categories.keys()]))
 
     # MAKE THE HEATMAP VISUALIZATION
     plt.figure()
-    sns.heatmap(conf_matrix, annot=box_labels, fmt="", cmap='gray_r', cbar=True, xticklabels=x_cat,
-                yticklabels=np.flip(list(categories.values())))
+    sns.heatmap(conf_matrix, annot=box_labels, fmt="", cmap='gray_r', cbar=True,
+                xticklabels=np.flip(list(categories.values())),
+                yticklabels=x_cat)
     plt.ylabel('True label')
     plt.xlabel('Predicted label' + stats_text)
     if title:
@@ -337,7 +297,7 @@ def check_benchmark(model_best, database='sleep'):
     """
 
     @param model_best: dictionary with model information
-    @param database: (str) either 'sleep' or 'anaesthesia'
+    @param database: (str) either 'sleep' or 'database'
     @return: None
     """
     # reads benchmark list
@@ -385,8 +345,9 @@ def check_benchmark(model_best, database='sleep'):
         train_history.to_pickle(export_dir + '/' + export_dir[8:] + '_train_history.pkl')
 
 
-def super_test(model, transform_func, dataset='sleep'):
+def super_test(model, transform_func, dataset='sleep', n_files=5):
     """
+    @param n_files:
     @param model:
     @param dataset:
     @param transform_func:
@@ -397,7 +358,7 @@ def super_test(model, transform_func, dataset='sleep'):
         # initialize sleep database
         sleep = dbs.sleep()
         # loads [x_epochs, y_labels]
-        sleep.load_epochs_labels(t_files=5)
+        sleep.load_epochs_labels(t_files=n_files)
         # converts labels to [0=>conscious,5* 1=>unconscious]
         sleep.get_binary_labels()
         # Normalize the dataset between [-1,1]
@@ -406,16 +367,25 @@ def super_test(model, transform_func, dataset='sleep'):
         sleep.transform(transform_func)
         # make dataset ready for training
         sleep.get_ready_for_training()
+        # make train and test into 1
+        sleep.make_them_one()
         ##############################
-        print(model.evaluate(sleep.data['train']['epochs'], sleep.data['train']['labels']))
-        # print(model.evaluate(sleep.data['validation']['epochs'], sleep.data['validation']['labels']))
-        print(model.evaluate(sleep.data['test']['epochs'], sleep.data['test']['labels']))
+        print(model.evaluate(sleep.data['epochs'], sleep.data['labels']))
+        # Get confusion matrix
+        conf_mat = get_confusion_matrix(model, sleep.data,
+                                        sleep.info['class_balance']['value'])
+        # Plot confusion matrix
+        cm_categories = {0: 'Conscious', 1: 'Unconscious'}
+        labels = [' True Pos', ' False Neg', ' False Pos', ' True Neg']
+        make_confusion_matrix(conf_mat, group_names=labels,
+                              categories=cm_categories,
+                              class_balance=sleep.info['class_balance']['value'])
 
-    elif dataset == 'anaesthesia':
-        # initialize anaesthesia database
+    elif dataset == 'database':
+        # initialize database database
         anaesthesia = dbs.anaesthesia()
         # path to dataset
-        ane_data_path = r'../datasets/Kongsberg_anesthesia_data/EEG_resampled_100Hz'
+        ane_data_path = r'datasets\Kongsberg_anesthesia_data\EEG_resampled_100Hz'
         # loads [x_epochs, y_labels]
         anaesthesia.load_epochs_labels(ane_data_path, selected_channels=config.channels_sleep_montage,
                                        sleep_montage=True)
@@ -427,15 +397,25 @@ def super_test(model, transform_func, dataset='sleep'):
         anaesthesia.transform(transform_func)
         # make dataset ready for training
         anaesthesia.get_ready_for_training()
-        ####################################
-        print(model.evaluate(anaesthesia.data['train']['epochs'], anaesthesia.data['train']['labels']))
-        print(model.evaluate(anaesthesia.data['test']['epochs'], anaesthesia.data['test']['labels']))
+        # make train and test into 1
+        anaesthesia.make_them_one()
+        ##############################
+        print(model.evaluate(anaesthesia.data['epochs'], anaesthesia.data['labels']))
+        # Get confusion matrix
+        conf_mat = get_confusion_matrix(model, anaesthesia.data,
+                                        anaesthesia.info['class_balance']['value'])
+        # Plot confusion matrix
+        cm_categories = {0: 'Conscious', 1: 'Unconscious'}
+        labels = [' True Pos', ' False Neg', ' False Pos', ' True Neg']
+        make_confusion_matrix(conf_mat, group_names=labels,
+                              categories=cm_categories,
+                              class_balance=anaesthesia.info['class_balance']['value'])
 
 
 # -----------------------------------------------------------------------------
 #                               Within training plots
 # -----------------------------------------------------------------------------
-def boxplot_evaluation_metrics_from_df(data_frame):
+def boxplot_evaluation_metrics_from_df(data_frame, x_axes):
     """
     Plots Confusion Matrix and Evaluation Metrics from DataFrame
     @param data_frame: Pandas DataFrame with Metrics
@@ -443,27 +423,28 @@ def boxplot_evaluation_metrics_from_df(data_frame):
     """
     plt.figure(figsize=(10, 10))
     plt.subplot(2, 2, 1)
-    sns.boxplot(data=data_frame, x='participant', y='true_n')
+    sns.barplot(data=data_frame, x=x_axes, y='true_n')
     plt.subplot(2, 2, 2)
-    sns.boxplot(data=data_frame, x='participant', y='true_p')
+    sns.barplot(data=data_frame, x=x_axes, y='true_p')
     plt.subplot(2, 2, 3)
-    sns.boxplot(data=data_frame, x='participant', y='false_p')
+    sns.barplot(data=data_frame, x=x_axes, y='false_p')
     plt.subplot(2, 2, 4)
-    sns.boxplot(data=data_frame, x='participant', y='false_n')
+    sns.barplot(data=data_frame, x=x_axes, y='false_n')
     plt.suptitle(f'Confusion Matrix Scores\n in {config.NUM_FOLDS} Fold Cross-Validation \nAcross Participants')
     plt.show()
 
     plt.figure(figsize=(10, 10))
     plt.subplot(2, 2, 1)
-    sns.boxplot(data=data_frame, x='participant', y='acc')
+    sns.barplot(data=data_frame, x=x_axes, y='acc')
     plt.subplot(2, 2, 2)
-    sns.boxplot(data=data_frame, x='participant', y='precision')
+    sns.barplot(data=data_frame, x=x_axes, y='precision')
     plt.subplot(2, 2, 3)
-    sns.boxplot(data=data_frame, x='participant', y='recall')
+    sns.barplot(data=data_frame, x=x_axes, y='recall')
     plt.subplot(2, 2, 4)
-    sns.boxplot(data=data_frame, x='participant', y='f1')
+    sns.barplot(data=data_frame, x=x_axes, y='f1')
     plt.suptitle(f'Evaluation Metrics Scores\n in {config.NUM_FOLDS} Fold Cross-Validation \nAcross Participants')
     plt.show()
+
 
 def boxplot_within_patient_acc_fold(acc_score_data, loss_score_data, title):
     """
@@ -487,7 +468,7 @@ def boxplot_within_patient_acc_fold(acc_score_data, loss_score_data, title):
     plt.suptitle(title)
     plt.show()
 
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(10, 10))
     plt.subplot(1, 2, 1)
     sns.boxplot(data=acc_score_data.transpose(), linewidth=1.5)
     plt.ylabel('Accuracy')
