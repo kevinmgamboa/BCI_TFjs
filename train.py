@@ -202,4 +202,4 @@ utils.make_confusion_matrix(cm_per_fold[np.argmax(model_best['score'])], group_n
 # # ------------------------------------------------------------------------------------
 import tensorflowjs as tfjs
 
-tfjs.converterrs.save_keras_model(hub.model, 'log_savings/alex_' + date)
+tfjs.converters.save_keras_model(hub.model, 'log_savings/alex_' + date)
