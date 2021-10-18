@@ -140,7 +140,7 @@ for tra, val in kfold.split(database.data['train']['epochs'], database.data['tra
                 all_folds_best_test_score = test_scores[1]
                 # saves best model
                 model_name = f'/{int(10000*all_folds_best_test_score)}_best_model.h5'
-                hub.model.save(save_path + model_name)
+                hub.model.save(save_path + '/_best_model.h5')
             # updating previous score
             pre_score = copy.copy(test_scores)
             # reset the stopping patient counter
