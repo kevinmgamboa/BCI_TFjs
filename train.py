@@ -7,8 +7,10 @@ Created on Wed Jun  9 21:18:16 2021
 # -----------------------------------------------------------------------------
 import os
 import copy
+import shutil
 import numpy as np
 import pandas as pd
+import json
 # Personal Libraries
 from helpers_and_functions import config, main_functions as mpf, utils
 import databases as dbs
@@ -56,7 +58,8 @@ database.get_ready_for_training()
 # ------------------------------------------------------------------------------------
 # Creates folder to store experiment
 date = utils.create_date()
-os.mkdir('log_savings/alex_' + date)
+save_path = 'log_savings/alex_' + date
+os.mkdir(save_path)
 # confusion matrix per fold variable
 cm_per_fold = []
 # number of train epochs
@@ -130,13 +133,14 @@ for tra, val in kfold.split(database.data['train']['epochs'], database.data['tra
         if test_scores[1] > pre_score[1]:
             print(f'new best score in the fold: {test_scores[1]:.4}')
             # saves best model INSIDE FOLD
-            hub.model.save('log_savings/alex_' + date + '/best_fold_model.h5')
+            hub.model.save(save_path + '/best_fold_model.h5')
             # Saves best model from ALL FOLDS
             if test_scores[1] > all_folds_best_test_score:
                 print(f'new best model from ALL FOLDS {test_scores[1]:.4} ')
                 all_folds_best_test_score = test_scores[1]
                 # saves best model
-                hub.model.save('log_savings/alex_' + date + '/all_folds_best_model.h5')
+                model_name = f'/{int(10000*all_folds_best_test_score)}_best_model.h5'
+                hub.model.save(save_path + model_name)
             # updating previous score
             pre_score = copy.copy(test_scores)
             # reset the stopping patient counter
@@ -154,6 +158,7 @@ for tra, val in kfold.split(database.data['train']['epochs'], database.data['tra
     model_best['train_history'].append(train_history)
     # save best score from fold
     train_history = pd.DataFrame(train_history)
+    # id best model from training
     idx = train_history[5].idxmax()  # max idx test acc
     model_best['score'].append(train_history[5][idx])
     # saves segments of data the model was trained with
@@ -163,14 +168,14 @@ for tra, val in kfold.split(database.data['train']['epochs'], database.data['tra
     model_best['initial_weights'].append(ini_wei)
 
     print(
-        f'Best score fold {fn}: {hub.model.metrics_names[0]}: {train_history[4][idx]:.4}; {hub.model.metrics_names[1]}: {train_history[5][idx] * 100:.4}%')
+        f'Best score fold {fn-1}: {hub.model.metrics_names[0]}: {train_history[4][idx]:.4}; {hub.model.metrics_names[1]}: {train_history[5][idx] * 100:.4}%')
     # Adds test score
     model_best['test_acc_per_fold'].append(train_history[5][idx] * 100)
     model_best['test_loss_per_fold'].append(train_history[4][idx])
     # confusion matrix per fold
     # -------------------------
     # Load best model in fold
-    model_best_fold = tf.keras.models.load_model('log_savings/alex_' + date + '/best_fold_model.h5')
+    model_best_fold = tf.keras.models.load_model(save_path + '/best_fold_model.h5')
     # Confusion matrix of best model in fold
     cm_per_fold.append(utils.get_confusion_matrix(model_best_fold, database.data['test'],
                                                   database.info['class_balance']['test']['value']))
@@ -182,21 +187,27 @@ for tra, val in kfold.split(database.data['train']['epochs'], database.data['tra
 # ------------------------------------------------------------------------------------
 # confusion matrix dataframe across participants
 df = utils.cm_fold_to_df(cm_per_fold)
-utils.boxplot_evaluation_metrics_from_df(df, x_axes='fold')
+utils.boxplot_evaluation_metrics_from_df(df, x_axes='fold', save_path=save_path+'/ev_metrics')
 
 # plots train history for the best model
-utils.plot_train_test_history(model_best)
+utils.plot_train_test_history(model_best, save_path=save_path+'/tt_history.png')
 
 # Plots the confusion matrix of the best model the folds
 cm_categories = {0: 'Conscious', 1: 'Unconscious'}
 labels = [' True Pos', ' False Neg', ' False Pos', ' True Neg']
 utils.make_confusion_matrix(cm_per_fold[np.argmax(model_best['score'])], group_names=labels, categories=cm_categories,
                             class_balance=database.info['class_balance']['test']['value'],
-                            title='Confusion Matrix of Best Model')
+                            title='Confusion Matrix of Best Model', save_path=save_path+'/cf_matrix.png')
+# Save info best model as json
+utils.extract_best_convert_json(model_best, path=save_path)
+# deleting unnecessary files
+os.remove(save_path + '/best_fold_model.h5')
+# # zip the experiment folder
+# shutil.make_archive(save_path+'/experiment', 'zip', save_path)
 #%%
 # # ------------------------------------------------------------------------------------
 # #                                    Final Results
 # # ------------------------------------------------------------------------------------
 import tensorflowjs as tfjs
-
-tfjs.converters.save_keras_model(hub.model, 'log_savings/alex_' + date)
+model = tf.keras.models.load_model(save_path + model_name)
+tfjs.converters.save_keras_model(model, save_path + '/model_tfjs')

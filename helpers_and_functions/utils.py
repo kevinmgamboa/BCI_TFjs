@@ -3,6 +3,7 @@ Created on Wed Jul 14 11:52:11 2021
 @author: Kevin Machado Gamboa
 """
 import os
+import json
 import random as rd
 from datetime import datetime
 import numpy as np
@@ -14,7 +15,7 @@ from helpers_and_functions import config, main_functions as mpf
 import databases as dbs
 
 
-def plot_train_test_history(model_best):
+def plot_train_test_history(model_best, save_path):
     """
     @param model_best: dictionary with model information
     @return: Plots for history
@@ -36,7 +37,9 @@ def plot_train_test_history(model_best):
                                                           style=styles_acc, linewidth=1.0,
                                                           grid=True, ax=ax2)
     plt.xlabel('Epochs')
+    plt.savefig(save_path, bbox_inches='tight')
     plt.show()
+
 
 
 def print_cross_validation_scores(test_acc_per_fold, test_loss_per_fold):
@@ -194,7 +197,8 @@ def make_confusion_matrix(conf_matrix,
                           group_names=None,
                           categories='auto',
                           class_balance=None,
-                          title=None
+                          title=None,
+                          save_path=str
                           ):
     """
     This function will make a pretty plot of an sklearn Confusion Matrix cm using a Seaborn heatmap visualization.
@@ -231,7 +235,7 @@ def make_confusion_matrix(conf_matrix,
     x_cat = list(np.flip([f'from {class_balance[cl]} \n' + str(categories[cl]) for cl in categories.keys()]))
 
     # MAKE THE HEATMAP VISUALIZATION
-    plt.figure()
+    plt.figure(figsize=(8, 6))
     sns.heatmap(conf_matrix, annot=box_labels, fmt="", cmap='gray_r', cbar=True,
                 xticklabels=np.flip(list(categories.values())),
                 yticklabels=x_cat)
@@ -239,8 +243,9 @@ def make_confusion_matrix(conf_matrix,
     plt.xlabel('Predicted label' + stats_text)
     if title:
         plt.title(title)
-
+    plt.savefig(save_path, dpi=500, bbox_inches='tight')
     plt.show()
+
 
 
 def imshow_samples(dataset, classes):
@@ -415,7 +420,7 @@ def super_test(model, transform_func, dataset='sleep', n_files=5):
 # -----------------------------------------------------------------------------
 #                               Within training plots
 # -----------------------------------------------------------------------------
-def boxplot_evaluation_metrics_from_df(data_frame, x_axes):
+def boxplot_evaluation_metrics_from_df(data_frame, x_axes, save_path):
     """
     Plots Confusion Matrix and Evaluation Metrics from DataFrame
     @param data_frame: Pandas DataFrame with Metrics
@@ -431,7 +436,9 @@ def boxplot_evaluation_metrics_from_df(data_frame, x_axes):
     plt.subplot(2, 2, 4)
     sns.barplot(data=data_frame, x=x_axes, y='false_n')
     plt.suptitle(f'Confusion Matrix Scores\n in {config.NUM_FOLDS} Fold Cross-Validation \nAcross Participants')
+    plt.savefig(save_path + '1.png', bbox_inches='tight')
     plt.show()
+
 
     plt.figure(figsize=(10, 10))
     plt.subplot(2, 2, 1)
@@ -443,10 +450,11 @@ def boxplot_evaluation_metrics_from_df(data_frame, x_axes):
     plt.subplot(2, 2, 4)
     sns.barplot(data=data_frame, x=x_axes, y='f1')
     plt.suptitle(f'Evaluation Metrics Scores\n in {config.NUM_FOLDS} Fold Cross-Validation \nAcross Participants')
+    plt.savefig(save_path + '2.png', bbox_inches='tight')
     plt.show()
 
 
-def boxplot_within_patient_acc_fold(acc_score_data, loss_score_data, title):
+def boxplot_within_patient_acc_fold(acc_score_data, loss_score_data, title, save_path):
     """
     Boxplots the average participant test acc per fold
     @param loss_score_data: loss matrix num_participants X folds_cross-validation
@@ -467,6 +475,7 @@ def boxplot_within_patient_acc_fold(acc_score_data, loss_score_data, title):
     plt.xticks(np.arange(0, 5), np.arange(1, 6))
     plt.suptitle(title)
     plt.show()
+    plt.savefig(save_path)
 
     plt.figure(figsize=(10, 10))
     plt.subplot(1, 2, 1)
@@ -481,6 +490,7 @@ def boxplot_within_patient_acc_fold(acc_score_data, loss_score_data, title):
     plt.xticks(np.arange(0, len(acc_score_data)), np.arange(1, len(acc_score_data) + 1))
     plt.suptitle(f'Cross-Validation Score Distribution Across {len(loss_score_data)} Participants')
     plt.show()
+    plt.savefig(save_path)
 
 
 def plot_mean_acc_within_patient(mean_test_acc, mean_test_loss):
@@ -515,5 +525,24 @@ def plot_mean_acc_within_patient(mean_test_acc, mean_test_loss):
     plt.suptitle('Best Test Score Per Participant')
     plt.show()
 
-# plt.stem(np.arange(1, len(mean_acc) + 1), mean_acc, 'r*', use_line_collection=True)
-# plt.show()
+def extract_best_convert_json(data, path):
+    """
+    extract the info from all models and keep the model with best score
+    :param data: Dictionary with experiment data
+    :param path: Where json file will be saved
+    :return: new dictionary with best model info
+    """
+    # initialise new dictionary
+    info_best_model = dict()
+    # loop to extract info from best model
+    for n, key in enumerate(data.keys()):
+        if n != 0 and n != 8:
+            info_best_model[key] = data[key][np.argmax(data['score'])]
+    # converting into json object
+    print('converting into json ..')
+    js = pd.Series(info_best_model).to_json(orient='values')
+    # Saving experiment as json file
+    print('saving json ..')
+    with open(path + "/experiment.json", "w") as out_file:
+        json.dump(js, out_file)
+
