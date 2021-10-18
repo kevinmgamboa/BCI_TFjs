@@ -28,6 +28,8 @@ eeg_bands = {'Delta': (1, 4),
              'Alpha': (8, 12),
              'Beta': (12, 30),
              'Gamma': (30, 49)}
+# Define resampling frequency
+rs_freq = 100
 
 # ------------------------------------------------------------------
 NUM_FOLDS = 5

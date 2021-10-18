@@ -1,5 +1,4 @@
 """
-
 Created on Wed Jun  9 21:18:16 2021
 @author: kevin machado gamboa
 """
@@ -35,7 +34,7 @@ import modelhub as mh
 
 # %%
 # Feature Applied
-feature_function = mpf.band_binary_matrix_dataset # mpf.raw_chunks_to_spectrograms, mpf.binary_matrix_dataset
+feature_function = mpf.raw_chunks_to_spectrograms
 # ------------------------------------------------------------------------------------
 #                               Loading dataset
 # ------------------------------------------------------------------------------------
@@ -45,8 +44,6 @@ database = dbs.eeg()
 ane_data_path = 'datasets/alex'
 # loads [x_epochs, y_labels]
 database.load_epochs_labels(ane_data_path, selected_channels=config.channels_sleep_montage, sleep_montage=True)
-# converts labels to [0=>conscious, 1=>unconscious]
-database.get_binary_labels()
 # Normalize the dataset between [-1,1]
 database.transform(mpf.nor_dataset)
 # applying dataset transformation e.g. 'spectrogram'
