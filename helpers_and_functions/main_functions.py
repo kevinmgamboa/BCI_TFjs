@@ -563,7 +563,7 @@ def raw_chunks_to_spectrograms(data, sf=100):
                               step_size=step_size)
         ch2 = aid_spectrogram(data[sample_idx][1].astype('float64'), log=True, thresh=spec_thresh, fft_size=fft_size,
                               step_size=step_size)
-        chs = np.dstack((ch1, ch2))
+        chs = np.dstack((ch1, ch2)).astype('float32')
 
         X.append(chs)
 
