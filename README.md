@@ -1,4 +1,4 @@
-# BCI_TFjs
+# BCI - Alex Project [![Made With Love](https://img.shields.io/badge/Made%20With-Love-orange.svg)](https://github.com/chetanraj/awesome-github-badges)  
 
 **NOTE:** This repository contains code for the Alex Project. For more info visit [Brains@Play Discord](https://brainsatplay.com/).
 
