@@ -452,11 +452,12 @@ def overlapping(signal, stepsize=1, fs=1000, time_window=0.2, number_time_sample
         number_time_samples = int(fs * time_window)
     else:
         pass
-    append = np.zeros((number_time_samples - len(
-        signal) % number_time_samples))  # this calculates how many samples to add to the input vector for the windows to fit along it, and creates a zeros vector of that size.
-    signal = np.hstack((signal,
-                        append))  # completes the input vector with the zeros vector created in order to have an even number of windows fit in the data
-    result = np.vstack(signal[i:i + number_time_samples] for i in range(0, len(signal) - number_time_samples, stepsize))
+    # this calculates how many samples to add to the input vector for the windows to fit along it, and creates a zeros vector of that size.
+    append = np.zeros((number_time_samples - len(signal) % number_time_samples))
+    # completes the input vector with the zeros vector created in order to have an even number of windows fit in the data
+    signal = np.hstack((signal, append))
+    result = [signal[i:i + number_time_samples] for i in range(0, len(signal) - number_time_samples, stepsize)]
+    result = np.vstack(result)
     return result
 
 

@@ -1,5 +1,5 @@
 """
-Created on Wed Jun  9 21:18:16 2021
+Created on Tue Oct 19 20:13:16 2021
 @author: kevin machado gamboa
 """
 # -----------------------------------------------------------------------------
@@ -54,5 +54,5 @@ predictions = transfered_model.predict(database.data['train']['epochs'])
 # Results
 plt.figure()
 plt.plot(database.data['train']['labels'])
-plt.plot(mpf.vec_nor(predictions))
+plt.plot((predictions))
 plt.show()
