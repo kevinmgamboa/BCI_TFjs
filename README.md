@@ -1,4 +1,4 @@
-# BCI - Alex Project [![Made With Love](https://img.shields.io/badge/Made%20With-Love-orange.svg)](https://github.com/chetanraj/awesome-github-badges)  
+# BCI - Alex Project ![model acc](https://img.shields.io/badge/model_acc-93.6%25-ygreen)
 
 **NOTE:** This repository contains code for the Alex Project. For more info visit [Brains@Play Discord](https://brainsatplay.com/).
 
@@ -14,3 +14,8 @@ The EEG files in `.edf` format (or Alex dataset) must be renamed adding **_sleep
         eegfile2_sleep.edf
         eegfile3_awake.edf
         eegfile4_awake.edf
+
+### Best Results
+
+![cf_matrix](log_savings/alex_20211018_194037/tt_history.png)
+![cf_matrix](log_savings/alex_20211018_194037/cf_matrix.png)
